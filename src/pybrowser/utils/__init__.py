@@ -9,6 +9,12 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 
+class ConfigurationError(Exception):
+    """Raised when configuration is invalid."""
+
+    pass
+
+
 class Config:
     """Application configuration."""
 
@@ -33,7 +39,9 @@ class Config:
 
         try:
             with open(self.config_path, "r") as f:
-                return json.load(f)
+                config = json.load(f)
+                self._validate_config(config)
+                return config
         except Exception as e:
             logger.error(f"Failed to load config: {e}")
             return self._get_default_config()
@@ -52,6 +60,29 @@ class Config:
             },
             "log_level": os.environ.get("PYBROWSER_LOG_LEVEL", "INFO"),
         }
+
+    def _validate_config(self, config: dict):
+        """
+        Validate configuration structure.
+
+        Args:
+            config: Configuration dictionary to validate
+
+        Raises:
+            ConfigurationError: If configuration is invalid
+        """
+        # Check required top-level keys
+        required_keys = ["api_base_url", "oauth"]
+        for key in required_keys:
+            if key not in config:
+                raise ConfigurationError(f"Missing required configuration key: {key}")
+
+        # Check required OAuth keys
+        oauth_config = config.get("oauth", {})
+        required_oauth_keys = ["client_id", "client_secret", "authorization_url", "token_url"]
+        for key in required_oauth_keys:
+            if key not in oauth_config or not oauth_config[key]:
+                raise ConfigurationError(f"Missing or empty required OAuth configuration: {key}")
 
     def save(self):
         """Save configuration to file."""

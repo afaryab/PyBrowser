@@ -98,3 +98,37 @@ def test_logout(mock_keyring, auth_manager):
 
     assert auth_manager._token is None
     mock_keyring.delete_password.assert_called_once()
+
+
+def test_is_token_expired_no_expiration(auth_manager):
+    """Test token expiration check when no expiration info is present."""
+    token = {"access_token": "test_token"}
+    assert auth_manager.is_token_expired(token) is False
+
+
+def test_is_token_expired_valid_token(auth_manager):
+    """Test token expiration check with valid token."""
+    import time
+
+    token = {"access_token": "test_token", "expires_at": time.time() + 3600}
+    assert auth_manager.is_token_expired(token) is False
+
+
+def test_is_token_expired_expired_token(auth_manager):
+    """Test token expiration check with expired token."""
+    import time
+
+    token = {"access_token": "test_token", "expires_at": time.time() - 100}
+    assert auth_manager.is_token_expired(token) is True
+
+
+def test_state_validation_in_fetch_token(auth_manager):
+    """Test that state validation prevents CSRF attacks."""
+    auth_manager._state = "correct_state"
+
+    # Try to fetch token with wrong state
+    try:
+        auth_manager.fetch_token("http://localhost:8080/callback?code=test", "wrong_state")
+        assert False, "Should have raised ValueError"
+    except ValueError as e:
+        assert "CSRF" in str(e)

@@ -26,6 +26,11 @@ from pybrowser.auth import AuthenticationManager
 
 logger = logging.getLogger(__name__)
 
+# UI Constants
+SIDEBAR_WIDTH = 250
+MAIN_WINDOW_WIDTH = 1200
+MAIN_WINDOW_HEIGHT = 800
+
 
 class BrowserTab(QWidget):
     """Individual browser tab with web view."""
@@ -116,7 +121,7 @@ class MainWindow(QMainWindow):
         self.current_app: Optional[Application] = None
 
         self.setWindowTitle("PyBrowser")
-        self.setGeometry(100, 100, 1200, 800)
+        self.setGeometry(100, 100, MAIN_WINDOW_WIDTH, MAIN_WINDOW_HEIGHT)
 
         self._setup_ui()
         self._load_data()
@@ -140,7 +145,7 @@ class MainWindow(QMainWindow):
         # Sidebar
         self.sidebar = ApplicationSidebar()
         self.sidebar.application_selected.connect(self._on_application_selected)
-        self.sidebar.setMaximumWidth(250)
+        self.sidebar.setMaximumWidth(SIDEBAR_WIDTH)
         splitter.addWidget(self.sidebar)
 
         # Browser area
@@ -148,7 +153,7 @@ class MainWindow(QMainWindow):
         splitter.addWidget(self.browser_tabs)
 
         # Set splitter sizes (sidebar smaller than content)
-        splitter.setSizes([250, 950])
+        splitter.setSizes([SIDEBAR_WIDTH, MAIN_WINDOW_WIDTH - SIDEBAR_WIDTH])
 
         main_layout.addWidget(splitter)
 
@@ -181,15 +186,27 @@ class MainWindow(QMainWindow):
         """Load teams and applications from server."""
         try:
             teams = self.api_client.get_teams()
-            if teams:
-                # For now, use the first team
-                team = teams[0]
-                applications = self.api_client.get_applications(team.id)
-                self.sidebar.set_applications(applications)
+            if not teams:
+                QMessageBox.information(
+                    self, "No Teams", "No teams found for your account. Please contact your administrator."
+                )
+                return
 
-                # Load first application by default
-                if applications:
-                    self._on_application_selected(applications[0])
+            # For now, use the first team
+            # TODO: Add team selector for users with multiple teams
+            team = teams[0]
+            applications = self.api_client.get_applications(team.id)
+
+            if not applications:
+                QMessageBox.information(self, "No Applications", f"No applications found in team '{team.name}'.")
+                return
+
+            self.sidebar.set_applications(applications)
+
+            # Load first application by default
+            if applications:
+                self._on_application_selected(applications[0])
+
         except Exception as e:
             logger.error(f"Failed to load data: {e}")
             QMessageBox.warning(self, "Error", f"Failed to load data from server: {str(e)}")
