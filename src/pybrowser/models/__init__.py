@@ -6,7 +6,7 @@ from pydantic import BaseModel, HttpUrl
 
 class QuickLink(BaseModel):
     """Model for quick access links."""
-    
+
     id: str
     name: str
     url: HttpUrl
@@ -16,7 +16,7 @@ class QuickLink(BaseModel):
 
 class Application(BaseModel):
     """Model for team applications."""
-    
+
     id: str
     name: str
     url: HttpUrl
@@ -27,7 +27,7 @@ class Application(BaseModel):
 
 class Team(BaseModel):
     """Model for user teams."""
-    
+
     id: str
     name: str
     description: Optional[str] = None
@@ -36,7 +36,7 @@ class Team(BaseModel):
 
 class UserProfile(BaseModel):
     """Model for authenticated user profile."""
-    
+
     id: str
     email: str
     name: str

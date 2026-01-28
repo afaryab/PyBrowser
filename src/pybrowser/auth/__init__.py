@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class OAuthConfig:
     """OAuth configuration."""
-    
+
     def __init__(
         self,
         client_id: str,
@@ -31,19 +31,19 @@ class OAuthConfig:
 
 class AuthenticationManager:
     """Manages OAuth authentication flow and token storage."""
-    
+
     SERVICE_NAME = "PyBrowser"
     TOKEN_KEY = "oauth_token"
-    
+
     def __init__(self, config: OAuthConfig):
         self.config = config
         self._token: Optional[Dict] = None
         self._session: Optional[OAuth2Session] = None
-        
+
     def get_authorization_url(self) -> tuple[str, str]:
         """
         Generate authorization URL for OAuth flow.
-        
+
         Returns:
             Tuple of (authorization_url, state)
         """
@@ -52,19 +52,17 @@ class AuthenticationManager:
             redirect_uri=self.config.redirect_uri,
             scope=self.config.scope,
         )
-        authorization_url, state = oauth.authorization_url(
-            self.config.authorization_base_url
-        )
+        authorization_url, state = oauth.authorization_url(self.config.authorization_base_url)
         return authorization_url, state
-    
+
     def fetch_token(self, authorization_response: str, state: str) -> Dict:
         """
         Exchange authorization code for access token.
-        
+
         Args:
             authorization_response: Full callback URL with code
             state: State parameter from authorization request
-            
+
         Returns:
             Token dictionary
         """
@@ -81,19 +79,15 @@ class AuthenticationManager:
         self._token = token
         self._save_token(token)
         return token
-    
+
     def _save_token(self, token: Dict):
         """Save token securely using keyring."""
         try:
-            keyring.set_password(
-                self.SERVICE_NAME,
-                self.TOKEN_KEY,
-                json.dumps(token)
-            )
+            keyring.set_password(self.SERVICE_NAME, self.TOKEN_KEY, json.dumps(token))
             logger.info("Token saved securely")
         except Exception as e:
             logger.error(f"Failed to save token: {e}")
-    
+
     def load_token(self) -> Optional[Dict]:
         """Load token from secure storage."""
         try:
@@ -104,17 +98,17 @@ class AuthenticationManager:
         except Exception as e:
             logger.error(f"Failed to load token: {e}")
         return None
-    
+
     def get_token(self) -> Optional[Dict]:
         """Get current token."""
         if not self._token:
             self._token = self.load_token()
         return self._token
-    
+
     def is_authenticated(self) -> bool:
         """Check if user is authenticated."""
         return self.get_token() is not None
-    
+
     def logout(self):
         """Clear authentication tokens."""
         try:
@@ -123,14 +117,14 @@ class AuthenticationManager:
             logger.info("User logged out successfully")
         except Exception as e:
             logger.error(f"Failed to logout: {e}")
-    
+
     def get_session(self) -> OAuth2Session:
         """Get authenticated OAuth session."""
         if not self._session or not self._token:
             self._token = self.load_token()
             if not self._token:
                 raise ValueError("No valid token available")
-            
+
             self._session = OAuth2Session(
                 self.config.client_id,
                 token=self._token,
