@@ -1,0 +1,12 @@
+{
+  "api_base_url": "https://api.example.com",
+  "oauth": {
+    "client_id": "your_client_id_here",
+    "client_secret": "your_client_secret_here",
+    "authorization_url": "https://auth.example.com/oauth/authorize",
+    "token_url": "https://auth.example.com/oauth/token",
+    "redirect_uri": "http://localhost:8080/callback",
+    "scope": ["openid", "profile", "email"]
+  },
+  "log_level": "INFO"
+}
